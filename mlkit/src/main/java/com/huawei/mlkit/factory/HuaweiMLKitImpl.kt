@@ -3,6 +3,7 @@ package com.huawei.mlkit.factory
 import android.content.Context
 import android.content.Intent
 import android.graphics.*
+import android.net.Uri
 import android.provider.MediaStore
 import android.text.Html
 import android.util.Log
@@ -31,8 +32,6 @@ import com.huawei.hms.mlsdk.text.MLRemoteTextSetting
 import com.huawei.hms.mlsdk.text.MLTextAnalyzer
 import com.huawei.hms.mlsdk.translate.MLTranslatorFactory
 import com.huawei.hms.mlsdk.translate.cloud.MLRemoteTranslateSetting
-import com.huawei.mlkit.common.TypeAliasLandMark
-import com.huawei.mlkit.common.TypeAliasString
 import com.huawei.mlkit.model.LandMarkModel
 import java.io.IOException
 import java.text.DecimalFormat
@@ -40,10 +39,10 @@ import java.util.*
 
 class HuaweiMLKitImpl : BaseMLKit() {
 
-    override fun translate(text: String, getTranslatedTextResult: TypeAliasString) {
+    override fun translate(text: String, getTranslatedTextResult: (translatedText: String) -> Unit) {
         super.translate(text, getTranslatedTextResult)
         val sourceLangCode = "en"
-        val targetLangCode = "zh"
+        val targetLangCode = "tr"
 
         val setting =
             MLRemoteTranslateSetting.Factory() // Set the source language code. The ISO 639-1 standard is used.
@@ -52,28 +51,39 @@ class HuaweiMLKitImpl : BaseMLKit() {
                 .setTargetLangCode(targetLangCode)
                 .create()
 
-            val mlRemoteTranslator = MLTranslatorFactory.getInstance().getRemoteTranslator(setting)
+        val mlRemoteTranslator = MLTranslatorFactory.getInstance().getRemoteTranslator(setting)
 
-            val task = mlRemoteTranslator?.asyncTranslate(text)
+        val task = mlRemoteTranslator?.asyncTranslate(text)
 
-            task?.addOnSuccessListener { translatedText ->
+        task?.addOnSuccessListener { translatedText ->
             getTranslatedTextResult(translatedText)
 
         }?.addOnFailureListener { e ->
             getTranslatedTextResult("Fail-2")
+            println("${e.message}")
+            println("${e.cause?.message}")
+            println("${e.localizedMessage}")
+            e.stackTrace.forEach {
+                println("${it.fileName}")
+                println("${it.className}")
+                println("${it.methodName}")
+            }
         }
     }
 
     override fun textRecognition(
         context: Context,
         imageData: Intent?,
-        getTextRecognitionResult: TypeAliasString
+        getTextRecognitionResult: (recognitionText: String) -> Unit
     ) {
         super.textRecognition(context, imageData, getTextRecognitionResult)
 
         val textAnalyzer: MLTextAnalyzer? = MLAnalyzerFactory.getInstance().localTextAnalyzer
 
-        val bitmapImage = imageData?.extras!!["data"] as Bitmap?
+//        val bitmapImage = imageData?.extras!!["data"] as Bitmap?
+        val imageUri = imageData?.data as Uri
+        val bitmapImage: Bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, imageUri)
+
         val mlFrame = MLFrame.Creator().setBitmap(Objects.requireNonNull(bitmapImage)).create()
         val task = textAnalyzer?.asyncAnalyseFrame(mlFrame)
 
@@ -89,7 +99,7 @@ class HuaweiMLKitImpl : BaseMLKit() {
         }
     }
 
-    override fun objectDetection(context: Context, imageData: Intent?, getTextResponse: TypeAliasString) {
+    override fun objectDetection(context: Context, imageData: Intent?, getTextResponse: (text: String) -> Unit) {
         super.objectDetection(context, imageData, getTextResponse)
         // Use MLObjectAnalyzerSetting.TYPE_PICTURE for static image detection.
         val setting = MLObjectAnalyzerSetting.Factory()
@@ -101,7 +111,10 @@ class HuaweiMLKitImpl : BaseMLKit() {
         val analyzer = MLAnalyzerFactory.getInstance().getLocalObjectAnalyzer(setting)
 
         // Create an MLFrame object using the bitmap, which is the image data in bitmap format.
-        val bitmapImage = imageData?.extras!!["data"] as Bitmap?
+//        val bitmapImage = imageData?.extras!!["data"] as Bitmap?
+        val imageUri = imageData?.data as Uri
+        val bitmapImage: Bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, imageUri)
+
         val frame = MLFrame.fromBitmap(bitmapImage)
 
         // Create a task to process the result returned by the object detector.
@@ -120,12 +133,15 @@ class HuaweiMLKitImpl : BaseMLKit() {
     override fun objectSegmentation(
         context: Context,
         imageData: Intent?,
-        getObjectSegmentationResult: TypeAliasString
+        getObjectSegmentationResult: (response: String) -> Unit
     ) {
         super.objectSegmentation(context, imageData, getObjectSegmentationResult)
         val analyzer = MLAnalyzerFactory.getInstance().imageSegmentationAnalyzer
 
-        val bitmapImage = imageData?.extras!!["data"] as Bitmap?
+//        val bitmapImage = imageData?.extras!!["data"] as Bitmap?
+        val imageUri = imageData?.data as Uri
+        val bitmapImage: Bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, imageUri)
+
         val frame = MLFrame.fromBitmap(bitmapImage)
 
         // Create a task to process the result returned by the image segmentation analyzer.
@@ -140,38 +156,20 @@ class HuaweiMLKitImpl : BaseMLKit() {
             getObjectSegmentationResult("Faill-7")
         }
     }
-    override fun productVisualSearch(imageData: Intent?, getProductVisualSearchResult: TypeAliasString) {
-        val settings = MLRemoteProductVisionSearchAnalyzerSetting.Factory()
-            .setLargestNumOfReturns(5)
-            .create()
-
-        val productVisionSearchAnalyzer = MLAnalyzerFactory.getInstance().getRemoteProductVisionSearchAnalyzer(settings)
-
-        val bitmapImage = imageData?.extras!!["data"] as Bitmap?
-        val mlFrame = MLFrame.Creator().setBitmap(Objects.requireNonNull(bitmapImage)).create()
-        val task = productVisionSearchAnalyzer!!.asyncAnalyseFrame(mlFrame)
-
-        task.addOnSuccessListener { mlSearchResult ->
-            val list = mlSearchResult.get(0).productList.size
-            Log.i("visualSearch", "visualSearch success: $list")
-            getProductVisualSearchResult("visualSearch success: $list")
-        }.addOnFailureListener { e ->
-            val mlException = e as MLException
-            Log.e("visualSearch", "visualSearch Fail: " + mlException.errCode)
-            getProductVisualSearchResult("Fail-5")
-        }
-    }
 
     override fun imageDetection(
         context: Context,
         imageData: Intent?,
-        getImageDetectionResult: TypeAliasString
+        getImageDetectionResult: (response: String) -> Unit
     ) {
         super.imageDetection(context, imageData, getImageDetectionResult)
         val analyzer: MLImageClassificationAnalyzer =
             MLAnalyzerFactory.getInstance().localImageClassificationAnalyzer
 
-        val bitmapImage = imageData?.extras!!["data"] as Bitmap?
+//        val bitmapImage = imageData?.extras!!["data"] as Bitmap?
+        val imageUri = imageData?.data as Uri
+        val bitmapImage: Bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, imageUri)
+
         val frame = MLFrame.fromBitmap(bitmapImage)
 
         val task = analyzer.asyncAnalyseFrame(frame)
@@ -192,7 +190,7 @@ class HuaweiMLKitImpl : BaseMLKit() {
         }
     }
 
-    override fun languageIdentification(text: String, getLanguageIdentificationResult: TypeAliasString) {
+    override fun languageIdentification(text: String, getLanguageIdentificationResult: (text: String) -> Unit) {
         super.languageIdentification(text, getLanguageIdentificationResult)
         val mlRemoteLangDetect: MLRemoteLangDetector = MLLangDetectorFactory.getInstance()
             .remoteLangDetector
@@ -207,8 +205,13 @@ class HuaweiMLKitImpl : BaseMLKit() {
         }
     }
 
-    override fun landmarkRecognition(context: Context, imageData: Intent?, getLandmarkRecognition: TypeAliasLandMark) {
+    override fun landmarkRecognition(
+        context: Context,
+        imageData: Intent?,
+        getLandmarkRecognition: (response: LandMarkModel) -> Unit
+    ) {
         super.landmarkRecognition(context, imageData, getLandmarkRecognition)
+
         val settings = MLRemoteLandmarkAnalyzerSetting.Factory()
             .setLargestNumOfReturns(1)
             .setPatternType(MLRemoteLandmarkAnalyzerSetting.STEADY_PATTERN)
@@ -216,7 +219,12 @@ class HuaweiMLKitImpl : BaseMLKit() {
         val analyzer = MLAnalyzerFactory.getInstance()
             .getRemoteLandmarkAnalyzer(settings)
         // Create an MLFrame by using android.graphics.Bitmap. Recommended image size: large than 640*640.
-        val imageBitmap = imageData?.extras!!["data"] as Bitmap?
+        // val imageBitmap = imageData?.extras!!["data"] as Bitmap?
+
+        val imageUri = imageData?.data as Uri
+        val imageBitmap: Bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, imageUri)
+        //val imageBitmap = imageData?.extras?.get("data") as? Bitmap
+
         if (imageBitmap != null) {
             val mlFrame = MLFrame.Creator()
                 .setBitmap(Objects.requireNonNull(imageBitmap))
@@ -239,8 +247,23 @@ class HuaweiMLKitImpl : BaseMLKit() {
             }
         }
     }
-    override fun documentRecognition(imageData: Intent?, getRecognitionDocumentResult: TypeAliasString) {
-        super.documentRecognition(imageData, getRecognitionDocumentResult)
+
+    override fun scanBarcode(context: Context, imageData: Intent?, getScanBarcodeResult: (response: String) -> Unit) {
+        super.scanBarcode(context, imageData, getScanBarcodeResult)
+        val hmsScan: HmsScan? = imageData?.getParcelableExtra(ScanUtil.RESULT)
+        getScanBarcodeResult("${hmsScan?.getOriginalValue()}")
+    }
+
+    override fun autoVisionEdge(
+        context: Context,
+        imageData: Intent?,
+        getAutoVisionEdgeResult: (response: String) -> Unit
+    ) {
+        //
+    }
+
+    override fun documentRecognition(context: Context, imageData: Intent?, getRecognitionDocumentResult: (response: String) -> Unit) {
+        super.documentRecognition(context, imageData, getRecognitionDocumentResult)
         val languageList = listOf("zh", "en")
         val setting = MLDocumentSetting.Factory()
             .setLanguageList(languageList)
@@ -248,7 +271,10 @@ class HuaweiMLKitImpl : BaseMLKit() {
             .create()
 
         val documentAnalyzer: MLDocumentAnalyzer = MLAnalyzerFactory.getInstance().getRemoteDocumentAnalyzer(setting)
-        val bitmapImage = imageData?.extras!!["data"] as Bitmap?
+//        val bitmapImage = imageData?.extras!!["data"] as Bitmap?
+        val imageUri = imageData?.data as Uri
+        val bitmapImage: Bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, imageUri)
+
         val mlFrame = MLFrame.Creator().setBitmap(Objects.requireNonNull(bitmapImage)).create()
         val task = documentAnalyzer.asyncAnalyseFrame(mlFrame)
         task.addOnSuccessListener { mlDocumentResult ->
@@ -262,62 +288,30 @@ class HuaweiMLKitImpl : BaseMLKit() {
         }
     }
 
+    override fun productVisualSearch(context: Context, imageData: Intent?, getProductVisualSearchResult: (response: String) -> Unit) {
+        super.productVisualSearch(context, imageData, getProductVisualSearchResult)
+        val settings = MLRemoteProductVisionSearchAnalyzerSetting.Factory()
+            .setLargestNumOfReturns(5)
+            .create()
 
+        val productVisionSearchAnalyzer = MLAnalyzerFactory.getInstance().getRemoteProductVisionSearchAnalyzer(settings)
 
+//        val bitmapImage = imageData?.extras!!["data"] as Bitmap?
+        val imageUri = imageData?.data as Uri
+        val bitmapImage: Bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, imageUri)
 
+        val mlFrame = MLFrame.Creator().setBitmap(Objects.requireNonNull(bitmapImage)).create()
+        val task = productVisionSearchAnalyzer!!.asyncAnalyseFrame(mlFrame)
 
-
-    // THE END :)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    override fun faceLandmarkRecognition(
-        context: Context,
-        imageData: Intent?,
-        getFaceLandmarkRecognition: TypeAliasLandMark
-    ) {
-        super.faceLandmarkRecognition(context, imageData, getFaceLandmarkRecognition)
-        //
-    }
-
-    override fun scanBarcode(context: Context, imageData: Intent?, getScanBarcodeResult: TypeAliasString) {
-        super.scanBarcode(context, imageData, getScanBarcodeResult)
-        val hmsScan: HmsScan? = imageData?.getParcelableExtra(ScanUtil.RESULT)
-        getScanBarcodeResult("${hmsScan?.getOriginalValue()}")
-    }
-
-    override fun autoVisionEdge(
-        context: Context,
-        imageData: Intent?,
-        getAutoVisionEdgeResult: TypeAliasString
-    ) {
-        //
+        task.addOnSuccessListener { mlSearchResult ->
+            val list = mlSearchResult.get(0).productList.size
+            Log.i("visualSearch", "visualSearch success: $list")
+            getProductVisualSearchResult("visualSearch success: $list")
+        }.addOnFailureListener { e ->
+            val mlException = e as MLException
+            Log.e("visualSearch", "visualSearch Fail: " + mlException.errCode)
+            getProductVisualSearchResult("Fail-5")
+        }
     }
 
     private fun getSuccessText(landmark: MLRemoteLandmark): String {

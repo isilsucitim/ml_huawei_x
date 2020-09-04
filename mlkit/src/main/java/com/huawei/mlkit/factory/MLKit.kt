@@ -2,47 +2,41 @@ package com.huawei.mlkit.factory
 
 import android.content.Context
 import android.content.Intent
-import com.huawei.mlkit.common.TypeAliasLandMark
-import com.huawei.mlkit.common.TypeAliasString
+import com.huawei.mlkit.model.LandMarkModel
 
 interface MLKit {
 
-    fun translate(text: String, getTranslatedTextResult: TypeAliasString)
+    fun translate(text: String, getTranslatedTextResult: (response: String) -> Unit)
 
-    fun objectDetection(context: Context, imageData: Intent?, getTextResponse: TypeAliasString)
+    fun objectDetection(context: Context, imageData: Intent?, getTextResponse: (response: String) -> Unit)
 
-    fun objectSegmentation(context: Context, imageData: Intent?, getObjectSegmentationResult: TypeAliasString)
+    fun objectSegmentation(context: Context, imageData: Intent?, getObjectSegmentationResult: (response: String) -> Unit)
 
-    fun imageDetection(context: Context, imageData: Intent?, getImageDetectionResult: TypeAliasString)
+    fun imageDetection(context: Context, imageData: Intent?, getImageDetectionResult: (response: String) -> Unit)
 
-    fun languageIdentification(text: String, getLanguageIdentificationResult: TypeAliasString)
+    fun languageIdentification(text: String, getLanguageIdentificationResult: (response: String) -> Unit)
 
     fun landmarkRecognition(
         context: Context,
         imageData: Intent?,
-        getLandmarkRecognition: TypeAliasLandMark
+        getLandmarkRecognition: (response: LandMarkModel) -> Unit
     )
 
-    fun faceLandmarkRecognition(
-        context: Context,
-        imageData: Intent?,
-        getLandmarkRecognition: TypeAliasLandMark
-    )
+    fun scanBarcode(context: Context, imageData: Intent?, getScanBarcodeResult: (response: String) -> Unit)
 
-    fun scanBarcode(context: Context, imageData: Intent?, getScanBarcodeResult: TypeAliasString)
-
-    fun autoVisionEdge(context: Context, imageData: Intent?, getAutoVisionEdgeResult: TypeAliasString)
+    fun autoVisionEdge(context: Context, imageData: Intent?, getAutoVisionEdgeResult: (response: String) -> Unit)
 
     fun textRecognition(
         context: Context,
         imageData: Intent?,
-        getTextRecognitionResult: TypeAliasString
+        getTextRecognitionResult: (response: String) -> Unit
     )
 
     fun documentRecognition(
+        context: Context,
         imageData: Intent?,
-        getRecognitionDocumentResult: TypeAliasString
+        getRecognitionDocumentResult: (response: String) -> Unit
     )
 
-    fun productVisualSearch(imageData: Intent?, getProductVisualSearchResult: TypeAliasString)
+    fun productVisualSearch(context: Context, imageData: Intent?, getProductVisualSearchResult: (response: String) -> Unit)
 }

@@ -3,8 +3,10 @@ package com.huawei.mlkit.factory
 import android.content.Context
 import android.content.Intent
 import android.graphics.*
+import android.net.Uri
 import android.provider.MediaStore
 import android.text.Html
+import android.util.Log
 import com.google.firebase.ml.common.FirebaseMLException
 import com.google.firebase.ml.common.modeldownload.FirebaseModelDownloadConditions
 import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage
@@ -25,16 +27,16 @@ import com.huawei.hms.mlsdk.MLAnalyzerFactory
 import com.huawei.hms.mlsdk.common.MLFrame
 import com.huawei.hms.mlsdk.landmark.MLRemoteLandmark
 import com.huawei.hms.mlsdk.landmark.MLRemoteLandmarkAnalyzerSetting
-import com.huawei.mlkit.common.TypeAliasLandMark
-import com.huawei.mlkit.common.TypeAliasString
 import com.huawei.mlkit.model.LandMarkModel
+import com.huawei.mlkit.utils.ImageClassifier
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.text.DecimalFormat
 import java.util.*
 
 class FirebaseMLKitImpl : BaseMLKit() {
 
-    override fun translate(text: String, getTranslatedTextResult: TypeAliasString) {
+    override fun translate(text: String, getTranslatedTextResult: (translatedText: String) -> Unit) {
         super.translate(text, getTranslatedTextResult)
         // Create an English-German translator:
         val options: FirebaseTranslatorOptions = FirebaseTranslatorOptions.Builder()
@@ -68,7 +70,7 @@ class FirebaseMLKitImpl : BaseMLKit() {
     override fun textRecognition(
         context: Context,
         imageData: Intent?,
-        getTextRecognitionResult: TypeAliasString
+        getTextRecognitionResult: (recognitionText: String) -> Unit
     ) {
         super.textRecognition(context, imageData, getTextRecognitionResult)
 
@@ -129,17 +131,25 @@ class FirebaseMLKitImpl : BaseMLKit() {
         }
     }
 
-    override fun productVisualSearch(imageData: Intent?, getProductVisualSearchResult: TypeAliasString) {
-        super.productVisualSearch(imageData, getProductVisualSearchResult)
+    override fun productVisualSearch(
+        context: Context,
+        imageData: Intent?,
+        getProductVisualSearchResult: (response: String) -> Unit
+    ) {
+        super.productVisualSearch(context, imageData, getProductVisualSearchResult)
         //
     }
 
-    override fun documentRecognition(imageData: Intent?, getRecognitionDocumentResult: TypeAliasString) {
-        super.documentRecognition(imageData, getRecognitionDocumentResult)
+    override fun documentRecognition(
+        context: Context,
+        imageData: Intent?,
+        getRecognitionDocumentResult: (response: String) -> Unit
+    ) {
+        super.documentRecognition(context, imageData, getRecognitionDocumentResult)
         //
     }
 
-    override fun objectDetection(context: Context, imageData: Intent?, getTextResponse: TypeAliasString) {
+    override fun objectDetection(context: Context, imageData: Intent?, getTextResponse: (text: String) -> Unit) {
         super.objectDetection(context, imageData, getTextResponse)
 
         try {
@@ -158,23 +168,24 @@ class FirebaseMLKitImpl : BaseMLKit() {
                 .addOnFailureListener {
                     // Task failed with an exception
                     // ...
+                    println("it $it")
                 }
         } catch (e: IOException) {
             e.printStackTrace()
         }
     }
 
-    override fun objectSegmentation(context: Context, imageData: Intent?, getTextResponse: TypeAliasString) {
+    override fun objectSegmentation(context: Context, imageData: Intent?, getTextResponse: (response: String) -> Unit) {
         super.objectSegmentation(context, imageData, getTextResponse)
         //
     }
 
-    override fun imageDetection(context: Context, imageData: Intent?, getTextResponse: TypeAliasString) {
+    override fun imageDetection(context: Context, imageData: Intent?, getTextResponse: (response: String) -> Unit) {
         super.imageDetection(context, imageData, getTextResponse)
         //
     }
 
-    override fun languageIdentification(text: String, getLanguageIdentificationResult: TypeAliasString) {
+    override fun languageIdentification(text: String, getLanguageIdentificationResult: (text: String) -> Unit) {
         super.languageIdentification(text, getLanguageIdentificationResult)
         val languageIdentifier =
             FirebaseNaturalLanguage.getInstance().languageIdentification
@@ -188,17 +199,13 @@ class FirebaseMLKitImpl : BaseMLKit() {
             }
     }
 
-    override fun landmarkRecognition(context: Context, imageData: Intent?, getLandmarkRecognition: TypeAliasLandMark) {
-        super.landmarkRecognition(context, imageData, getLandmarkRecognition)
-        //
-    }
-
-    override fun faceLandmarkRecognition(
+    override fun landmarkRecognition(
         context: Context,
         imageData: Intent?,
-        getFaceLandmarkRecognition: TypeAliasLandMark
+        getLandmarkRecognition: (response: LandMarkModel) -> Unit
     ) {
-        super.faceLandmarkRecognition(context, imageData, getFaceLandmarkRecognition)
+        super.landmarkRecognition(context, imageData, getLandmarkRecognition)
+
         val btm: Bitmap
         try {
             btm = MediaStore.Images.Media.getBitmap(context.contentResolver, imageData?.data)
@@ -230,7 +237,7 @@ class FirebaseMLKitImpl : BaseMLKit() {
                                 canvas.drawRect(bounds, p)
 
                                 landMarkModel.responseBitmap = mutBtm
-                                getFaceLandmarkRecognition(landMarkModel)
+                                getLandmarkRecognition(landMarkModel)
                                 //imageView.setImageBitmap(mutBtm)
 
                                 val rotY =
@@ -253,7 +260,7 @@ class FirebaseMLKitImpl : BaseMLKit() {
                                     canvas.drawRect(rect, p)
                                     //
                                     landMarkModel.responseBitmap = mutBtm
-                                    getFaceLandmarkRecognition(landMarkModel)
+                                    getLandmarkRecognition(landMarkModel)
                                     //imageView.setImageBitmap(mutBtm)
                                 }
 
@@ -278,7 +285,7 @@ class FirebaseMLKitImpl : BaseMLKit() {
                                         )
                                         //
                                         landMarkModel.responseBitmap = mutBtm
-                                        getFaceLandmarkRecognition(landMarkModel)
+                                        getLandmarkRecognition(landMarkModel)
                                         //imageView.setImageBitmap(mutBtm)
                                     } else {
                                         canvas.drawText(
@@ -289,7 +296,7 @@ class FirebaseMLKitImpl : BaseMLKit() {
                                         )
                                         //
                                         landMarkModel.responseBitmap = mutBtm
-                                        getFaceLandmarkRecognition(landMarkModel)
+                                        getLandmarkRecognition(landMarkModel)
                                         //imageView.setImageBitmap(mutBtm)
                                     }
                                 }
@@ -306,6 +313,7 @@ class FirebaseMLKitImpl : BaseMLKit() {
                         .addOnFailureListener {
                             // Task failed with an exception
                             // ...
+                            it.printStackTrace()
                         }
             } catch (e: IOException) {
                 e.printStackTrace()
@@ -315,7 +323,7 @@ class FirebaseMLKitImpl : BaseMLKit() {
         }
     }
 
-    override fun scanBarcode(context: Context, imageData: Intent?, getScanBarcodeResult: TypeAliasString) {
+    override fun scanBarcode(context: Context, imageData: Intent?, getScanBarcodeResult: (response: String) -> Unit) {
         super.scanBarcode(context, imageData, getScanBarcodeResult)
         val image: FirebaseVisionImage
         try {
@@ -394,44 +402,23 @@ class FirebaseMLKitImpl : BaseMLKit() {
     override fun autoVisionEdge(
         context: Context,
         imageData: Intent?,
-        getAutoVisionEdgeResult: TypeAliasString
+        getAutoVisionEdgeResult: (response: String) -> Unit
     ) {
 
-        val labeler: FirebaseVisionImageLabeler? = null
-
-        val localModel: AutoMLImageLabelerLocalModel = AutoMLImageLabelerLocalModel.Builder()
-            .setAssetFilePath("modelfiles/manifest.json") // or .setAbsoluteFilePath(absolute file path to manifest file)
-            .build()
-        try {
-
-//            val options = FirebaseVisionOnDeviceAutoMLImageLabelerOptions.Builder(localModel)
-//                .setConfidenceThreshold(0.0f)
-//                .setLocalModelName("LOCAL_MODEL_NAME")
-//                .setRemoteModelName("REMOTE_MODEL_NAME")
-//                .build()
-//
-//            labeler = FirebaseVision.getInstance().getOnDeviceAutoMLImageLabeler(options)
-        } catch (e: FirebaseMLException) {
-            e.printStackTrace()
-        }
-
-        try {
-            val image = FirebaseVisionImage.fromFilePath(context, Objects.requireNonNull(imageData?.data!!))
-            labeler?.processImage(image)
-                ?.addOnSuccessListener { labels ->
-                    // Task completed successfully
-// ...
-                    for (label in labels) {
-                        val text = label.text
-                        val confidence = label.confidence
+        FirebaseVisionImage.fromFilePath(context, imageData?.data!!).also {
+            // Classify image.
+            try {
+                val classifier = ImageClassifier(context)
+                classifier.classifyFrame(it.bitmap)?.addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        println("kanka-success")
+                    } else {
+                        println("kanka-failure")
                     }
                 }
-                ?.addOnFailureListener {
-                    // Task failed with an exception
-// ...
-                }
-        } catch (e: IOException) {
-            e.printStackTrace()
+            } catch (e: FirebaseMLException) {
+                e.printStackTrace()
+            }
         }
     }
 }

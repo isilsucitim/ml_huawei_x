@@ -10,17 +10,26 @@ class ObjectDetectionActivity : BaseActivity() {
         setContentView(R.layout.activity_object_detection)
 
         btn_take_photo.setOnClickListener {
+            // galeri
             val intent = Intent()
             intent.type = "image/*"
             intent.action = Intent.ACTION_GET_CONTENT
             startActivityForResult(Intent.createChooser(intent, "xx"), PIC_IMAGE)
+
+            // camera
+//            val intent = Intent()
+////            intent.type = "image/*"
+//            intent.action = android.provider.MediaStore.ACTION_IMAGE_CAPTURE
+//            //intent.action = Intent.ACTION_GET_CONTENT
+//            startActivityForResult(intent, PIC_IMAGE)
+//            //startActivityForResult(Intent.createChooser(intent, "xx"), PIC_IMAGE)
         }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if (resultCode == PIC_IMAGE) {
+        if (requestCode == PIC_IMAGE) {
             mMLKitManager.getObjectDetection(this, data, getTextResponse = {
                 tv_result.text = it
             })

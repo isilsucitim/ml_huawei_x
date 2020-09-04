@@ -1,3 +1,6 @@
+-keep class com.huawei.openalliance.ad.** { *; }
+-keep class com.huawei.hms.ads.** { *; }
+
 -ignorewarnings
 -keepattributes *Annotation*
 -keepattributes Exceptions
@@ -7,20 +10,6 @@
 -keep class com.hianalytics.android.**{*;}
 -keep class com.huawei.updatesdk.**{*;}
 -keep class com.huawei.hms.**{*;}
-
-"R.string.hms*",
-"R.string.connect_server_fail_prompt_toast",
-"R.string.getting_message_fail_prompt_toast",
-"R.string.no_available_network_prompt_toast",
-"R.string.third_app_*",
-"R.string.upsdk_*",
-"R.layout.hms*",
-"R.layout.upsdk_*",
-"R.drawable.upsdk*",
-"R.color.upsdk*",
-"R.dimen.upsdk*",
-"R.style.upsdk*",
-"R.string.agc*"
 
 # Add project specific ProGuard rules here.
 # You can control the set of applied configuration files using the

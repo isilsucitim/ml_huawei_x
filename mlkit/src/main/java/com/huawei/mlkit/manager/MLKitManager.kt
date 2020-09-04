@@ -3,12 +3,13 @@ package com.huawei.mlkit.manager
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import com.huawei.mlkit.common.TypeAliasLandMark
-import com.huawei.mlkit.common.TypeAliasString
 import com.huawei.mlkit.factory.MLKit
 import com.huawei.mlkit.factory.MLKitFactory
 import com.huawei.mlkit.model.LandMarkModel
 import com.huawei.mlkit.utils.CheckServiceAvailable
+
+typealias TypeAliasString = (response: String) -> Unit
+typealias TypeAliasLandMark = (response: LandMarkModel) -> Unit
 
 class MLKitManager(activity: Activity) {
 
@@ -54,14 +55,6 @@ class MLKitManager(activity: Activity) {
         mlKit?.landmarkRecognition(context, imageData, getLandmarkRecognition)
     }
 
-    fun getFaceLandmarkRecognition(
-        context: Context,
-        imageData: Intent?,
-        getFaceLandmarkRecognition: TypeAliasLandMark
-    ) {
-        mlKit?.faceLandmarkRecognition(context, imageData, getFaceLandmarkRecognition)
-    }
-
     fun getScanBarcode(context: Context, imageData: Intent?, getScanBarcodeResult: TypeAliasString) {
         mlKit?.scanBarcode(context, imageData, getScanBarcodeResult)
     }
@@ -71,13 +64,14 @@ class MLKitManager(activity: Activity) {
     }
 
     fun getDocumentRecognition(
+        context: Context,
         imageData: Intent?,
         getDocumentRecognitionResult: TypeAliasString
     ) {
-        mlKit?.productVisualSearch(imageData, getDocumentRecognitionResult)
+        mlKit?.documentRecognition(context, imageData, getDocumentRecognitionResult)
     }
 
-    fun getProductVisualSearch(imageData: Intent?, getProductVisualSearchResult: TypeAliasString) {
-        mlKit?.productVisualSearch(imageData, getProductVisualSearchResult)
+    fun getProductVisualSearch(context: Context, imageData: Intent?, getProductVisualSearchResult: TypeAliasString) {
+        mlKit?.productVisualSearch(context, imageData, getProductVisualSearchResult)
     }
 }

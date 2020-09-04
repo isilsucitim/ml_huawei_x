@@ -28,7 +28,8 @@ class ScanBarCodeActivity : BaseActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (grantResults[0] != PackageManager.PERMISSION_GRANTED && requestCode == REQUEST_CODE_CAMERA) {
+        if (grantResults[0] == PackageManager.PERMISSION_GRANTED &&
+            requestCode == REQUEST_CODE_CAMERA) {
             if (CheckServiceAvailable.getAvailableService(this) == DistributeType.HUAWEI_SERVICES) {
                 ScanUtil.startScan(
                     this,
@@ -37,16 +38,18 @@ class ScanBarCodeActivity : BaseActivity() {
                 )
             } else {
                 val intent = Intent()
-                intent.type = "image/*"
-                intent.action = Intent.ACTION_GET_CONTENT
-                startActivityForResult(Intent.createChooser(intent, "xx"), PIC_IMAGE)
+                //intent.type = "image/*"
+                intent.action = android.provider.MediaStore.ACTION_IMAGE_CAPTURE
+//                intent.action = Intent.ACTION_GET_CONTENT
+                startActivityForResult(intent, REQUEST_CODE_SCAN_ONE)
+                //startActivityForResult(Intent.createChooser(intent, "xx"), PIC_IMAGE)
             }
         }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == Activity.RESULT_OK && resultCode == REQUEST_CODE_CAMERA) {
+        if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_CODE_SCAN_ONE) {
             mMLKitManager.getScanBarcode(this, data, getScanBarcodeResult = {
                 tv_result.text = it
             })

@@ -12,6 +12,7 @@ class TranslatorActivity : BaseActivity() {
             val text = et_input.text.toString()
             mMLKitManager.getTranslate(text, getTranslatedTextResult = {
                 println("Response - $it")
+                tv_result.text = it
             })
         }
     }

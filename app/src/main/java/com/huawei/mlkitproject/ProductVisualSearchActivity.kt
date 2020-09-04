@@ -20,8 +20,8 @@ class ProductVisualSearchActivity : BaseActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if (resultCode == PIC_IMAGE) {
-            mMLKitManager.getProductVisualSearch( data, getProductVisualSearchResult = {
+        if (requestCode == PIC_IMAGE) {
+            mMLKitManager.getProductVisualSearch(this, data, getProductVisualSearchResult = {
                 tv_result.text = it
             })
         }

@@ -20,7 +20,7 @@ class LandMarkRecognitionActivity : BaseActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if (resultCode == PIC_IMAGE) {
+        if (requestCode == PIC_IMAGE) {
             mMLKitManager.getLandmarkRecognition(this, data, getLandmarkRecognition = {
                 tv_result.text = it.responseText
             })
